@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 
 const tasksSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: "Users",
-  },
   name: {
     type: String,
     required: [true, "A task should have a name"],
@@ -18,6 +13,11 @@ const tasksSchema = new mongoose.Schema({
     type: String,
     enum: ["low", "medium", "high"],
     default: "low",
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Users",
   },
   collaborators: [
     {
@@ -44,6 +44,20 @@ const tasksSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  modifications: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users",
+      },
+      edits: {
+        type: Object,
+      },
+      timeStamp: {
+        type: Date,
+      },
+    },
+  ],
 });
 
 const Tasks = mongoose.model("Tasks", tasksSchema);

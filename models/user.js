@@ -78,6 +78,6 @@ userSchema.methods.passwordChangedAfterTokenIssued = async function (
   return false;
 };
 
-const Users = mongoose.model("users", userSchema);
+const Users = mongoose.model("Users", userSchema);
 
 module.exports = Users;

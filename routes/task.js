@@ -11,10 +11,11 @@ router
 
 router
   .route("/:id")
+  .get(authController.protectRoute, taskController.getTaskDetails)
   .patch(authController.protectRoute, taskController.modifyTask);
 
 router
-  .route("/:id/collaborator/add")
-  .patch(authController.protectRoute, taskController.modifyTaskContributors);
+  .route("/collaborator/add/:id")
+  .patch(authController.protectRoute, taskController.addTaskContributors);
 
 module.exports = router;
