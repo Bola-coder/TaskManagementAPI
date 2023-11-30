@@ -1,6 +1,6 @@
 const Tasks = require("./../models/task");
 const Users = require("./../models/user");
-const catchAsync = require("./../utils/catchAync");
+const catchAsync = require("../utils/catchAsync");
 const AppError = require("./../utils/AppError");
 
 // Create a new task

@@ -1,6 +1,6 @@
 const Categories = require("../models/category");
 const AppError = require("../utils/AppError");
-const catchAsync = require("../utils/catchAync");
+const catchAsync = require("../utils/catchAsync");
 
 // Create a new category
 // Private Route
