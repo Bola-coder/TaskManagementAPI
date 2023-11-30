@@ -19,6 +19,11 @@ const tasksSchema = new mongoose.Schema({
     required: true,
     ref: "Users",
   },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Categories",
+  },
   collaborators: [
     {
       user: {

@@ -10,12 +10,21 @@ router
   .post(authController.protectRoute, taskController.createNewTask);
 
 router
-  .route("/:id")
-  .get(authController.protectRoute, taskController.getTaskDetails)
-  .patch(authController.protectRoute, taskController.modifyTask);
+  .route("/completed")
+  .get(authController.protectRoute, taskController.getCompletedTasks);
 
 router
-  .route("/collaborator/add/:id")
+  .route("/:id")
+  .get(authController.protectRoute, taskController.getTaskDetails)
+  .patch(authController.protectRoute, taskController.modifyTask)
+  .delete(authController.protectRoute, taskController.deleteTask);
+
+router
+  .route("/collaborator/add/:taskId")
   .patch(authController.protectRoute, taskController.addTaskContributors);
+
+router
+  .route("/collaborator/remove/:taskId")
+  .patch(authController.protectRoute, taskController.removeTaskContributor);
 
 module.exports = router;

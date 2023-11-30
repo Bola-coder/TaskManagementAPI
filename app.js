@@ -4,6 +4,7 @@ const cors = require("cors");
 const errorHandler = require("./middlewares/ErrorHandler");
 const authRouter = require("./routes/auth");
 const taskRouter = require("./routes/task");
+const categoryRouter = require("./routes/category");
 const AppError = require("./utils/AppError");
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/task", taskRouter);
+app.use("/api/v1/category", categoryRouter);
 
 app.all("*", (req, res, next) => {
   const error = new AppError(

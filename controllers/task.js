@@ -22,9 +22,25 @@ const createNewTask = catchAsync(async (req, res, next) => {
 // Private Route
 const getAllTasks = catchAsync(async (req, res, next) => {
   const userID = req.user._id;
-  const tasks = await Tasks.find({ user: userID }).populate(
-    "user collaborators.user"
-  );
+
+  // Filtering data (basic)
+  const queryObj = { ...req.query };
+  const excludedFields = ["page", "sort", "limit", "fields"];
+  excludedFields.forEach((field) => delete queryObj[field]);
+  const query = Tasks.find({ user: userID, ...queryObj });
+
+  // sorting data
+  // This mostly works with the startDate and dueDate fields
+  if (req.query.sort) {
+    console.log(req.query.sort);
+    const sortBy = req.query.sort.split(",").join(" ");
+    query.sort(sortBy);
+  } else {
+    query.sort("-startDate");
+  }
+
+  // Executing the query
+  const tasks = await query.populate("user collaborators.user category");
 
   if (!tasks) {
     return next(new AppError("Failed to get all tasks", 404));
@@ -44,7 +60,7 @@ const getTaskDetails = catchAsync(async (req, res, next) => {
   const userID = req.user._id;
   const taskID = req.params.id;
   const task = await Tasks.findOne({ user: userID, _id: taskID }).populate(
-    "user collaborators.user"
+    "user collaborators.user category"
   );
 
   if (!task) {
@@ -90,6 +106,7 @@ const modifyTask = catchAsync(async (req, res, next) => {
     "priority",
     "dueDate",
     "completed",
+    "category",
   ];
 
   let containsDisallowedField = false;
@@ -117,7 +134,7 @@ const modifyTask = catchAsync(async (req, res, next) => {
   });
   const updatedTask = await task.save();
   const newTask = await updatedTask.populate(
-    "user collaborators.user modifications.user"
+    "user collaborators.user modifications.user category"
   );
 
   res.status(200).json({
@@ -127,10 +144,57 @@ const modifyTask = catchAsync(async (req, res, next) => {
   });
 });
 
+// Delete a task
+// Private Route
+const deleteTask = catchAsync(async (req, res, next) => {
+  const taskId = req.params.id;
+  const userId = req.user._id;
+
+  // 1. Check if the task exists
+  const task = await Tasks.findById(taskId);
+  if (!task) {
+    return next(new AppError("Task with the specified ID not found", 404));
+  }
+
+  const taskName = task.name;
+
+  //   2 Check if the the user id supplied can modify the tour either as the creator of the task
+
+  if (!task.user.equals(userId)) {
+    return next(
+      new AppError("You are not authorized to modify this task", 403)
+    );
+  }
+  //   Delete the task
+  await Tasks.findByIdAndDelete(taskId);
+  res.status(200).json({
+    status: "success",
+    message: `Task "${taskName}" deleted successfully`,
+  });
+});
+
+const getCompletedTasks = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+  const tasks = await Tasks.find({ user: userID, completed: true }).populate(
+    "user collaborators.user category"
+  );
+
+  if (!tasks) {
+    return next(new AppError("Failed to get all completed tasks", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    result: tasks.length,
+    message: "Completed Tasks fectched successfully",
+    tasks,
+  });
+});
+
 // Add a task Contributor
 // Private Route
 const addTaskContributors = catchAsync(async (req, res, next) => {
-  const taskId = req.params.id;
+  const taskId = req.params.taskId;
   const userId = req.user._id;
 
   const task = await Tasks.findById(taskId);
@@ -191,10 +255,86 @@ const addTaskContributors = catchAsync(async (req, res, next) => {
   });
 });
 
+// Delete a task Contributor
+// Private Route
+const removeTaskContributor = catchAsync(async (req, res, next) => {
+  const taskId = req.params.taskId;
+  const userId = req.user._id;
+
+  const task = await Tasks.findById(taskId);
+
+  if (!task) {
+    return next(new AppError("Task with the provided ID does not exist", 404));
+  }
+
+  //   Check if it is the task owner who is trying to add a collaborator
+  if (!task.user.equals(userId)) {
+    return next(
+      new AppError(
+        "You are not authorized to remove a collaborator from this task",
+        403
+      )
+    );
+  }
+
+  const { collaborator_email } = req.body;
+
+  if (!collaborator_email) {
+    return next(
+      new AppError(
+        "Request body should contain the email of the collaborator you want to remove from the task",
+        403
+      )
+    );
+  }
+
+  const collaborator = await Users.findOne({ email: collaborator_email });
+
+  if (!collaborator) {
+    return next(
+      new AppError("No user with the specified collaborator email", 404)
+    );
+  }
+
+  //   Check if the email specified is a collaborator for the task
+  for (const collab of task.collaborators) {
+    console.log(collab);
+    console.log(collab.user);
+    console.log(collaborator._id);
+    if (!collab.user.equals(collaborator.id)) {
+      return next(
+        new AppError(
+          "User with the specified email address is not a collaborator for this task",
+          404
+        )
+      );
+    }
+  }
+
+  // Reomve the collaborator from the collaborators array on the task
+  task.collaborators = task.collaborators.filter((collaborator) =>
+    collaborator.user.equals(collaborator.id)
+  );
+  console.log(task.collaborators);
+
+  //   Save the new task as updatedTask
+  const updatedTask = await task.save();
+  // updatedtask = await updatedTask.populate("user, collaborators.user");
+
+  res.status(200).json({
+    status: "success",
+    message: "Collaborator removed successfully",
+    task: updatedTask,
+  });
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,
   getTaskDetails,
   modifyTask,
+  deleteTask,
+  getCompletedTasks,
   addTaskContributors,
+  removeTaskContributor,
 };
