@@ -328,6 +328,34 @@ const removeTaskContributor = catchAsync(async (req, res, next) => {
   });
 });
 
+// Get all taks belonging to a category
+// Private Route
+const getTasksByCategory = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+  const categoryID = req.params.categoryId;
+
+  const tasks = await Tasks.find({
+    user: userID,
+    category: categoryID,
+  }).populate("user collaborators.user category");
+
+  if (!tasks) {
+    return next(
+      new AppError(
+        "Failed to get all tasks belonging to the specified category",
+        404
+      )
+    );
+  }
+
+  res.status(200).json({
+    status: "success",
+    result: tasks.length,
+    message: "All tasks in the specified category fectched successfully",
+    tasks,
+  });
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,
@@ -337,4 +365,5 @@ module.exports = {
   getCompletedTasks,
   addTaskContributors,
   removeTaskContributor,
+  getTasksByCategory,
 };

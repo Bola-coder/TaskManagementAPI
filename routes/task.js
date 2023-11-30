@@ -27,4 +27,8 @@ router
   .route("/collaborator/remove/:taskId")
   .patch(authController.protectRoute, taskController.removeTaskContributor);
 
+router
+  .route("/category/:categoryId")
+  .get(authController.protectRoute, taskController.getTasksByCategory);
+
 module.exports = router;
