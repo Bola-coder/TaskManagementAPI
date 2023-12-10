@@ -4,6 +4,7 @@ const tasksSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, "A task should have a name"],
+    index: true,
   },
   description: {
     type: String,
@@ -64,6 +65,8 @@ const tasksSchema = new mongoose.Schema({
     },
   ],
 });
+
+tasksSchema.index({ name: "text", description: "text" });
 
 const Tasks = mongoose.model("Tasks", tasksSchema);
 

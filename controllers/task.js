@@ -356,6 +356,35 @@ const getTasksByCategory = catchAsync(async (req, res, next) => {
   });
 });
 
+// Search for tasks that macth a keyword
+// Private Route
+const searchTasks = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+  const keyword = req.query.keyword;
+
+  const tasks = await Tasks.find({
+    user: userID,
+    $text: { $search: keyword },
+  }).populate("user collaborators.user category");
+
+  if (!tasks) {
+    return next(
+      new AppError(
+        "Failed to get all tasks matching the specified keyword",
+        404
+      )
+    );
+  }
+
+  res.status(200).json({
+    status: "success",
+    result: tasks.length,
+    message:
+      "All tasks matching the specified search keyword fectched successfully",
+    tasks,
+  });
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,
@@ -366,4 +395,5 @@ module.exports = {
   addTaskContributors,
   removeTaskContributor,
   getTasksByCategory,
+  searchTasks,
 };

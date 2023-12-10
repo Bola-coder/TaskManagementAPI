@@ -14,6 +14,10 @@ router
   .get(authController.protectRoute, taskController.getCompletedTasks);
 
 router
+  .route("/search")
+  .get(authController.protectRoute, taskController.searchTasks);
+
+router
   .route("/:id")
   .get(authController.protectRoute, taskController.getTaskDetails)
   .patch(authController.protectRoute, taskController.modifyTask)
