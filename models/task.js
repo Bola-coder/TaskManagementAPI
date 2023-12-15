@@ -6,25 +6,30 @@ const tasksSchema = new mongoose.Schema({
     required: [true, "A task should have a name"],
     index: true,
   },
+
   description: {
     type: String,
     required: [true, "Please provide a description"],
   },
+
   priority: {
     type: String,
     enum: ["low", "medium", "high"],
     default: "low",
   },
+
   user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "Users",
   },
+
   category: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "Categories",
   },
+
   collaborators: [
     {
       user: {
@@ -38,18 +43,36 @@ const tasksSchema = new mongoose.Schema({
       },
     },
   ],
+
   startDate: {
     type: Date,
     default: Date.now,
     immutable: true,
   },
+
   dueDate: {
     type: Date,
   },
+
   completed: {
     type: Boolean,
     default: false,
   },
+
+  team: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Teams",
+  },
+
+  //For tasks in a team
+  assignedTo: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users",
+      },
+    },
+  ],
   modifications: [
     {
       user: {

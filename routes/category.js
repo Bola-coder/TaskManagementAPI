@@ -20,4 +20,12 @@ router
   .patch(authController.protectRoute, categoryController.updateCategoryDetails)
   .delete(authController.protectRoute, categoryController.deleteCategory);
 
+router
+  .route("/team/:teamID")
+  .post(authController.protectRoute, categoryController.createTeamCategory)
+  .get(
+    authController.protectRoute,
+    categoryController.getAllCategoriesBelongingToTeam
+  );
+
 module.exports = router;

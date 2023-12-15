@@ -18,6 +18,17 @@ const CategorySchema = new mongoose.Schema({
     required: true,
     ref: "Users",
   },
+
+  categoryType: {
+    type: String,
+    enum: ["personal", "team"],
+    default: "personal",
+  },
+
+  teamID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Teams",
+  },
 });
 
 const Categories = mongoose.model("Categories", CategorySchema);

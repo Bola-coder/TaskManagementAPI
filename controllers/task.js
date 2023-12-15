@@ -1,5 +1,6 @@
 const Tasks = require("./../models/task");
 const Users = require("./../models/user");
+const Teams = require("./../models/team");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("./../utils/AppError");
 
@@ -385,6 +386,152 @@ const searchTasks = catchAsync(async (req, res, next) => {
   });
 });
 
+// Teams Related Events for tasks
+
+// Create task for team
+// Private Route
+const createTaskForTeam = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+  const teamID = req.params.teamID;
+  const { name, description, priority, dueDate, category } = req.body;
+
+  // Check if the user is the owner of the team
+  const team = await Teams.findById(teamID);
+  if (!team) {
+    return next(new AppError("Team with the specified ID not found", 404));
+  }
+
+  if (!team.owner.equals(userID)) {
+    return next(
+      new AppError(
+        "You are not authorized to create a task for this team. Only the team owner can create a task for the team",
+        403
+      )
+    );
+  }
+
+  // Create the task
+  let task = await Tasks.create({
+    name,
+    description,
+    user: userID,
+    priority,
+    dueDate,
+    category,
+    team: teamID,
+  });
+
+  task = await task.populate("user team");
+
+  if (!task) {
+    return next(new AppError("Failed to create new task", 404));
+  }
+
+  // Add the task to the team
+  team.tasks.push(task._id);
+  await team.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Task created successfully",
+    task,
+  });
+});
+
+// Assign Task Or SubTask to a team member
+// Private Route
+const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
+  const userID = req.user.id;
+  const teamID = req.params.teemID;
+  const { memberEmail, taskID } = req.body;
+
+  if (!memberEmail || !taskID) {
+    return next(
+      new AppError(
+        "Please provide member email and taskID in the request body",
+        404
+      )
+    );
+  }
+
+  // Check if the teeam ID supplied is valid for the logged in user
+  const team = await Teams.findOne({ owner: userID, id: teamID });
+  if (!team) {
+    return next(
+      new AppError("Team with the specified team ID and user ID not found", 404)
+    );
+  }
+
+  // Check  if the member email supplied is  a vaoid user
+  const member = await Users.findOne({ email: memberEmail });
+  if (!member) {
+    return next(
+      new AppError("User with the email supplied does not exist", 404)
+    );
+  }
+
+  // Check if the member is a member of the team
+  const isMember = team.members.find((teamMember) =>
+    teamMember.user.equals(member.id)
+  );
+  if (!isMember) {
+    return next(
+      new AppError(
+        "The user with the ssupplied emkail you are trying to assign a task to is not a member of the team",
+        404
+      )
+    );
+  }
+
+  // Check if the task exists and if the user is the owner of the task
+  const task = await Tasks.findOne({ user: userID, _id: taskID });
+  if (!task) {
+    return next(new AppError("Task with the specified ID not found", 404));
+  }
+
+  // Check if the task being assigned belongs to the team
+  if (!team.tasks.includes(task._id)) {
+    return next(
+      new AppError(
+        "The task with the speciified taskID being assigned to a member does not belong to the team",
+        404
+      )
+    );
+  }
+
+  // I think this is redundant as userID is passed when fetching the team in the first place
+  // if (!task.user.equals(userID)) {
+  //   return next(
+  //     new AppError(
+  //       "You are not authorized to assign a task to a team member. Only the task owner can assign a task to a team member",
+  //       403
+  //     )
+  //   );
+  // }
+
+  // Checks if the task has been assigned to the member aleady
+  const isMemberAssigned = task.assignedTo.some((assignedMember) =>
+    assignedMember.user.equals(member.id)
+  );
+
+  console.log(isMemberAssigned);
+  if (isMemberAssigned) {
+    console.log(true);
+    return next(
+      new AppError("This task is already assigned to this member", 404)
+    );
+  }
+
+  // Assign the task to the member
+  task.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Task assigned successfully",
+    task,
+  });
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,
@@ -396,4 +543,6 @@ module.exports = {
   removeTaskContributor,
   getTasksByCategory,
   searchTasks,
+  createTaskForTeam,
+  assignTaskToTeamMember,
 };

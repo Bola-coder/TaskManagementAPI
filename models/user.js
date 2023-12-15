@@ -6,7 +6,7 @@ const userSchema = mongoose.Schema({
     type: String,
     unique: [true, "Username already taken by another user"],
     required: [true, "Please should provide a username"],
-    minLength: [4, "Your username should be a minimum of 4 characters"],
+    minLength: [4, "Your username should be a minimumPau of 4 characters"],
     maxLength: [16, "Your username should be a maximum of 16 characters"],
     trim: true,
   },
@@ -15,6 +15,12 @@ const userSchema = mongoose.Schema({
     unique: true,
     required: [true, "Please provide an email address"],
     trim: true,
+  },
+  type: {
+    //This type will be used to determine the what actions users can perform based on subsxription
+    type: String,
+    enum: ["individual", "professional", "enterprise"],
+    default: "individual",
   },
   password: {
     type: String,
