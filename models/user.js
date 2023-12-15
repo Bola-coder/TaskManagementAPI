@@ -12,7 +12,7 @@ const userSchema = mongoose.Schema({
   },
   email: {
     type: String,
-    unique: true,
+    unique: [true, "Email aleady in use"],
     required: [true, "Please provide an email address"],
     trim: true,
   },
