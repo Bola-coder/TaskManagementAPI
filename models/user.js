@@ -6,7 +6,7 @@ const userSchema = mongoose.Schema({
     type: String,
     unique: [true, "Username already taken by another user"],
     required: [true, "Please should provide a username"],
-    minLength: [4, "Your username should be a minimumPau of 4 characters"],
+    minLength: [4, "Your username should be a minimum of 4 characters"],
     maxLength: [16, "Your username should be a maximum of 16 characters"],
     trim: true,
   },
