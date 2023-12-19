@@ -7,6 +7,7 @@ const taskRouter = require("./routes/task");
 const categoryRouter = require("./routes/category");
 const commentRouter = require("./routes/comment");
 const teamRouter = require("./routes/team");
+const paymentRouter = require("./routes/payment");
 const AppError = require("./utils/AppError");
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api/v1/task", taskRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/team", teamRouter);
+app.use("/api/v1/payment", paymentRouter);
 
 app.all("*", (req, res, next) => {
   const error = new AppError(

@@ -19,8 +19,8 @@ const userSchema = mongoose.Schema({
   type: {
     //This type will be used to determine the what actions users can perform based on subsxription
     type: String,
-    enum: ["individual", "professional", "enterprise"],
-    default: "individual",
+    enum: ["basic", "premium", "enterprise"],
+    default: "basic",
   },
   password: {
     type: String,
