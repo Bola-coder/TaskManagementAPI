@@ -19,19 +19,20 @@ const signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
   });
 
-  newUser.password = undefined;
-
-  const safeUserData = { ...newUser };
-
-  delete safeUserData.password;
-
   if (!newUser) {
     return next(new AppError("Failed to create new user", 404));
   }
+
+  // newUser.password = undefined;
+
+  // const safeUserData = { ...newUser };
+
+  // delete safeUserData.password;
+
   const token = signJWTToken(newUser._id);
   res.status(200).json({
     status: "success",
-    user: safeUserData,
+    user: newUser,
     token,
   });
 });

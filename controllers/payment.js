@@ -41,6 +41,9 @@ const makeMonthlySubscriptionPayment = catchAsync(async (req, res, next) => {
       amount: paymentResponse.amount,
     });
 
+    user.type = "premium";
+    await user.save();
+
     res.status(200).json({
       status: "success",
       message: "Montly subscription made successfully",
@@ -50,5 +53,7 @@ const makeMonthlySubscriptionPayment = catchAsync(async (req, res, next) => {
     return next(error);
   }
 });
+
+const cancelSubscriptionPayment = catchAsync(async (req, res, next) => {});
 
 module.exports = { makeMonthlySubscriptionPayment };

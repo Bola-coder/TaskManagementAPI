@@ -13,6 +13,9 @@ router
 router
   .route("/add/member/:teamID")
   .patch(authcontroller.protectRoute, teamController.addTeamMember);
+router
+  .route("/remove/member/:teamID")
+  .patch(authcontroller.protectRoute, teamController.removeTeamMember);
 
 router
   .route("/task/:teamID")

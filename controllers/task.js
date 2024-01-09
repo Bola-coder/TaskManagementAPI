@@ -532,6 +532,10 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
   });
 });
 
+const getAssignedTasks = catchAsync(async (req, res, next) => {
+  console.log("yayyyy!!!");
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,

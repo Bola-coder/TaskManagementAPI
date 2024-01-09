@@ -38,6 +38,12 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  teams: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teams",
+    },
+  ],
 });
 
 // A database middleware to hash the password before saving to the database;
