@@ -25,4 +25,8 @@ router
   .route("/task/assign/:teamID")
   .post(authcontroller.protectRoute, taskController.assignTaskToTeamMember);
 
+router
+  .route("/user")
+  .get(authcontroller.protectRoute, teamController.getTeamsAUserBelongsTo);
+
 module.exports = router;

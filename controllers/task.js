@@ -499,16 +499,6 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
     );
   }
 
-  // I think this is redundant as userID is passed when fetching the team in the first place
-  // if (!task.user.equals(userID)) {
-  //   return next(
-  //     new AppError(
-  //       "You are not authorized to assign a task to a team member. Only the task owner can assign a task to a team member",
-  //       403
-  //     )
-  //   );
-  // }
-
   // Checks if the task has been assigned to the member aleady
   const isMemberAssigned = task.assignedTo.some((assignedMember) =>
     assignedMember.user.equals(member.id)
@@ -523,7 +513,13 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
   }
 
   // Assign the task to the member
-  task.save();
+  task.assignedTo.push({ user: member.id });
+  // Push he assigned task to the member assigned task array
+  member.assignedTasks.push({ task: task.id });
+  // Save task
+  await task.save();
+  // save member
+  await member.save();
 
   res.status(200).json({
     status: "success",
@@ -532,8 +528,17 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
   });
 });
 
+// Get Tasks assigned to a user in a  team
+// Private Route
 const getAssignedTasks = catchAsync(async (req, res, next) => {
-  console.log("yayyyy!!!");
+  const userID = req.user._id;
+  const taskID = req.params.taskID;
+
+  const task = await Tasks.findById(taskID);
+
+  if (!task) {
+    return next(new AppError("Task with the specified ID is not found", 404));
+  }
 });
 
 module.exports = {

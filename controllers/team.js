@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 const Teams = require("../models/team");
@@ -8,7 +9,7 @@ const Users = require("./../models/user");
 const createTeam = catchAsync(async (req, res, next) => {
   const userID = req.user._id;
   const { name, description } = req.body;
-  const team = await Team.create({
+  const team = await Teams.create({
     name,
     description,
     owner: userID,
@@ -25,7 +26,7 @@ const createTeam = catchAsync(async (req, res, next) => {
   });
 });
 
-// Get All Teams for User
+// Get All Teams Created By User
 // Private
 const getAllTeams = catchAsync(async (req, res, next) => {
   const userID = req.user._id;
@@ -54,6 +55,7 @@ const addTeamMember = catchAsync(async (req, res, next) => {
   const teamID = req.params.teamID;
 
   const team = await Teams.findById(teamID);
+  const member = await Users.findById(memberID);
 
   if (!team) {
     return next(
@@ -78,17 +80,40 @@ const addTeamMember = catchAsync(async (req, res, next) => {
     return next(new AppError("The user is already a member of the team", 404));
   }
 
-  //   Push the user to the team members list
-  team.members.push({ user: memberID });
+  // //   Push the user to the team members list
+  // team.members.push({ user: memberID });
 
-  // Add the team to the user teams array
-  const user = await Users.findById(userID);
-  user.teams.push(teamID);
+  // // Add the team to the user teams array
+  // user.teams.push(teamID);
 
-  // Save the team
-  await team.save();
-  // save the team to the user teams array
-  await user.save();
+  // // Save the team
+  // await team.save();
+  // // save the team to the user teams array
+  // await user.save();
+
+  // Using sessions to make sure both the teams and user documents gets updated
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    // Push the user to the team members list
+    team.members.push({ user: memberID });
+
+    // Add the team to the user teams array
+    member.teams.push({ team: teamID });
+
+    // Save the team and user within the same transaction
+    await team.save({ session });
+    await member.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    // Handle transaction error
+    await session.abortTransaction();
+    session.endSession();
+    return next(new AppError("Failed to add team member", 500));
+  }
 
   //   Send response to user
   res.status(200).json({
@@ -113,10 +138,10 @@ const removeTeamMember = catchAsync(async (req, res, next) => {
     );
   }
 
-  const user = await Users.findById(memberID);
+  const member = await Users.findById(memberID);
   console.log(user);
 
-  if (!user) {
+  if (!member) {
     return next(
       new AppError("User with the specified member ID not found!", 404)
     );
@@ -143,10 +168,10 @@ const removeTeamMember = catchAsync(async (req, res, next) => {
   // Remove the user from the team
   team.members = team.members.filter((member) => !member.user.equals(memberID));
   // Remove the team from the users team array
-  user.teams = user.teams.filter((team) => !team.equals(teamID));
+  member.teams = member.teams.filter((team) => !team.equals(teamID));
 
   await team.save();
-  await user.save();
+  await member.save();
 
   res.status(200).json({
     status: "success",
@@ -155,4 +180,30 @@ const removeTeamMember = catchAsync(async (req, res, next) => {
   });
 });
 
-module.exports = { createTeam, getAllTeams, addTeamMember, removeTeamMember };
+// Get Teams a User Belongs To
+// Private Route
+const getTeamsAUserBelongsTo = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+
+  const user = await Users.findById(userID).populate("teams");
+
+  if (!user) {
+    return next(new AppError("User with the specified ID not found!", 404));
+  }
+
+  const userTeams = user.teams;
+
+  res.status(200).json({
+    status: "success",
+    message: "Teams user belonged to fetched successfully",
+    userTeams,
+  });
+});
+
+module.exports = {
+  createTeam,
+  getAllTeams,
+  addTeamMember,
+  removeTeamMember,
+  getTeamsAUserBelongsTo,
+};
