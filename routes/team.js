@@ -24,6 +24,9 @@ router
 router
   .route("/task/assign/:teamID")
   .post(authcontroller.protectRoute, taskController.assignTaskToTeamMember);
+router
+  .route("/task/unassign/:teamID")
+  .patch(authcontroller.protectRoute, taskController.unAssignTaskToTeamMember);
 
 router
   .route("/user")

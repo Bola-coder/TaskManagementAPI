@@ -477,7 +477,7 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
   if (!isMember) {
     return next(
       new AppError(
-        "The user with the ssupplied emkail you are trying to assign a task to is not a member of the team",
+        "The user with the supplied emkail you are trying to assign a task to is not a member of the team",
         404
       )
     );
@@ -532,13 +532,89 @@ const assignTaskToTeamMember = catchAsync(async (req, res, next) => {
 // Private Route
 const getAssignedTasks = catchAsync(async (req, res, next) => {
   const userID = req.user._id;
-  const taskID = req.params.taskID;
+  const user = await Users.findById(userID).populate("assignedTasks.task");
 
+  if (!user) {
+    return next(new AppError("User with the specified ID not found!", 404));
+  }
+
+  const assignedTaskToUser = user.assignedTasks;
+  if (!assignedTaskToUser) {
+    return next(new AppError("This user has no task assigned to them", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    message: "Tasks assigned to user gotten successfully",
+    assignedTaskToUser,
+  });
+});
+
+// Unassign Task to User
+// Private Route
+const unAssignTaskToTeamMember = catchAsync(async (req, res, next) => {
+  const userID = req.user._id;
+  const teamID = req.params.teamID;
+  const { memberEmail, taskID } = req.body;
+
+  const team = await Teams.findById(teamID);
+  // const user = await Users.findById(userID);
+  const member = await Users.findOne({ email: memberEmail });
   const task = await Tasks.findById(taskID);
 
-  if (!task) {
-    return next(new AppError("Task with the specified ID is not found", 404));
+  if (!team) {
+    return next(new AppError("Team with the specified ID not found", 404));
   }
+
+  if (!task) {
+    return next(new AppError("Task with the specified ID not found", 404));
+  }
+
+  if (!team.owner.equals(userID)) {
+    return next(
+      new AppError("You are not authorized to perform this operation, 404")
+    );
+  }
+
+  if (!team.tasks.some((task) => task.equals(taskID))) {
+    return next(
+      new AppError(
+        "The task with the specified ID doesn't belong in this team",
+        404
+      )
+    );
+  }
+
+  if (
+    !task.assignedTo.some((assignedMembers) =>
+      assignedMembers.user.equals(member.id)
+    )
+  ) {
+    return next(
+      new AppError(
+        "The member with the specified email is not assigned to this task",
+        404
+      )
+    );
+  }
+
+  // Removed the member from the task assigned to array
+  task.assignedTo = task.assignedTo.filter(
+    (assigned) => !assigned.user.equals(member.id)
+  );
+  // Remove the task from the member assignedTask array
+  member.assignedTasks = member.assignedTasks.filter(
+    (assignedTask) => !assignedTask.task.equals(taskID)
+  );
+
+  await task.save();
+  await member.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "User unassigned from task successfully",
+    task,
+  });
 });
 
 module.exports = {
@@ -554,4 +630,6 @@ module.exports = {
   searchTasks,
   createTaskForTeam,
   assignTaskToTeamMember,
+  getAssignedTasks,
+  unAssignTaskToTeamMember,
 };

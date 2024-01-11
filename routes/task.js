@@ -18,6 +18,10 @@ router
   .get(authController.protectRoute, taskController.searchTasks);
 
 router
+  .route("/assigned")
+  .get(authController.protectRoute, taskController.getAssignedTasks);
+
+router
   .route("/:id")
   .get(authController.protectRoute, taskController.getTaskDetails)
   .patch(authController.protectRoute, taskController.modifyTask)
