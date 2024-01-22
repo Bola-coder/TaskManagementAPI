@@ -1,31 +1,32 @@
 const express = require("express");
 
+const categoryController = require("./../controllers/category");
+const authController = require("./../controllers/auth");
+const userMiddleware = require("./../middlewares/userMiddleware");
+
 const router = express.Router();
 
-const categoryController = require("./../controllers/category");
-
-const authController = require("./../controllers/auth");
+// Configuring all the routers in this file to use the middleware function stated
+router.use(
+  authController.protectRoute,
+  userMiddleware.verifyIfUserIsActive,
+  userMiddleware.checkIfUserEmailIsVerified
+);
 
 router
   .route("/")
-  .post(authController.protectRoute, categoryController.createNewCategory)
-  .get(
-    authController.protectRoute,
-    categoryController.getAllCategoriesBelongingToUser
-  );
+  .post(categoryController.createNewCategory)
+  .get(categoryController.getAllCategoriesBelongingToUser);
 
 router
   .route("/:id")
-  .get(authController.protectRoute, categoryController.getCategoryDetails)
-  .patch(authController.protectRoute, categoryController.updateCategoryDetails)
-  .delete(authController.protectRoute, categoryController.deleteCategory);
+  .get(categoryController.getCategoryDetails)
+  .patch(categoryController.updateCategoryDetails)
+  .delete(categoryController.deleteCategory);
 
 router
   .route("/team/:teamID")
-  .post(authController.protectRoute, categoryController.createTeamCategory)
-  .get(
-    authController.protectRoute,
-    categoryController.getAllCategoriesBelongingToTeam
-  );
+  .post(categoryController.createTeamCategory)
+  .get(categoryController.getAllCategoriesBelongingToTeam);
 
 module.exports = router;
