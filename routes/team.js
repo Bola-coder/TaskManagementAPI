@@ -1,35 +1,35 @@
 const express = require("express");
 const taskController = require("./../controllers/task");
-const authcontroller = require("./../controllers/auth");
+const authController = require("./../controllers/auth");
 const teamController = require("./../controllers/team");
+const userMiddleware = require("./../middlewares/userMiddleware");
 
 const router = express.Router();
 
+// Configuring all the routers in this file to use the middleware function stated
+router.use(
+  authController.protectRoute,
+  userMiddleware.verifyIfUserIsActive,
+  userMiddleware.checkIfUserEmailIsVerified
+);
+
 router
   .route("/")
-  .post(authcontroller.protectRoute, teamController.createTeam)
-  .get(authcontroller.protectRoute, teamController.getAllTeams);
+  .post(teamController.createTeam)
+  .get(teamController.getAllTeams);
 
-router
-  .route("/add/member/:teamID")
-  .patch(authcontroller.protectRoute, teamController.addTeamMember);
-router
-  .route("/remove/member/:teamID")
-  .patch(authcontroller.protectRoute, teamController.removeTeamMember);
+router.route("/add/member/:teamID").patch(teamController.addTeamMember);
+router.route("/remove/member/:teamID").patch(teamController.removeTeamMember);
 
-router
-  .route("/task/:teamID")
-  .post(authcontroller.protectRoute, taskController.createTaskForTeam);
+router.route("/task/:teamID").post(taskController.createTaskForTeam);
 
 router
   .route("/task/assign/:teamID")
-  .post(authcontroller.protectRoute, taskController.assignTaskToTeamMember);
+  .post(taskController.assignTaskToTeamMember);
 router
   .route("/task/unassign/:teamID")
-  .patch(authcontroller.protectRoute, taskController.unAssignTaskToTeamMember);
+  .patch(taskController.unAssignTaskToTeamMember);
 
-router
-  .route("/user")
-  .get(authcontroller.protectRoute, teamController.getTeamsAUserBelongsTo);
+router.route("/user").get(teamController.getTeamsAUserBelongsTo);
 
 module.exports = router;

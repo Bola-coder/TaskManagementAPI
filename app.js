@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const errorHandler = require("./middlewares/ErrorHandler");
 const authRouter = require("./routes/auth");
+const userRouter = require("./routes/user");
 const taskRouter = require("./routes/task");
 const categoryRouter = require("./routes/category");
 const commentRouter = require("./routes/comment");
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/user", userRouter);
 app.use("/api/v1/task", taskRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/comment", commentRouter);

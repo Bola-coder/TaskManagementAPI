@@ -165,7 +165,7 @@ const resendEmailVerificationToken = catchAsync(async (req, res, next) => {
 
   // stored a hashed version of the token in the database
   const updatedUser = await Users.findByIdAndUpdate(user._id, {
-    verification_token: hashedVerificationToken,
+    verificationToken: hashedVerificationToken,
   });
 
   res.status(200).json({
@@ -186,6 +186,7 @@ const verifyUserEmail = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Checks if the user is already verified
   if (user.emailVerified) {
     return next(new AppError("User has already been verified", 404));
   }

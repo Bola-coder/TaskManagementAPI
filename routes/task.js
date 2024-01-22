@@ -1,46 +1,44 @@
 const express = require("express");
 const taskController = require("./../controllers/task");
 const authController = require("./../controllers/auth");
+const userMiddleware = require("./../middlewares/userMiddleware");
 
 const router = express.Router();
 
+// Configuring all the routers in this file to use the middleware function stated
+router.use(
+  authController.protectRoute,
+  userMiddleware.verifyIfUserIsActive,
+  userMiddleware.checkIfUserEmailIsVerified
+);
+
 router
   .route("/")
-  .get(authController.protectRoute, taskController.getAllTasks)
-  .post(authController.protectRoute, taskController.createNewTask);
+  .get(taskController.getAllTasks)
+  .post(taskController.createNewTask);
 
-router
-  .route("/completed")
-  .get(authController.protectRoute, taskController.getCompletedTasks);
+router.route("/completed").get(taskController.getCompletedTasks);
 
-router
-  .route("/search")
-  .get(authController.protectRoute, taskController.searchTasks);
+router.route("/search").get(taskController.searchTasks);
 
-router
-  .route("/assigned")
-  .get(authController.protectRoute, taskController.getAssignedTasks);
+router.route("/assigned").get(taskController.getAssignedTasks);
 
 router
   .route("/:id")
-  .get(authController.protectRoute, taskController.getTaskDetails)
-  .patch(authController.protectRoute, taskController.modifyTask)
-  .delete(authController.protectRoute, taskController.deleteTask);
+  .get(taskController.getTaskDetails)
+  .patch(taskController.modifyTask)
+  .delete(taskController.deleteTask);
 
 router
   .route("/collaborator/add/:taskId")
-  .patch(authController.protectRoute, taskController.addTaskContributors);
+  .patch(taskController.addTaskContributors);
 
 router
   .route("/collaborator/remove/:taskId")
-  .patch(authController.protectRoute, taskController.removeTaskContributor);
+  .patch(taskController.removeTaskContributor);
 
-router
-  .route("/category/:categoryId")
-  .get(authController.protectRoute, taskController.getTasksByCategory);
+router.route("/category/:categoryId").get(taskController.getTasksByCategory);
 
-router
-  .route("/reminder/:taskId")
-  .patch(authController.protectRoute, taskController.createTaskReminder);
+router.route("/reminder/:taskId").patch(taskController.createTaskReminder);
 
 module.exports = router;
