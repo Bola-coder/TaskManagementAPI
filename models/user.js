@@ -2,12 +2,14 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const slugify = require("slugify");
 const userSchema = mongoose.Schema({
-  username: {
+  firstname: {
     type: String,
-    unique: [true, "Username already taken by another user"],
-    required: [true, "Please should provide a username"],
-    minLength: [4, "Your username should be a minimum of 4 characters"],
-    maxLength: [16, "Your username should be a maximum of 16 characters"],
+    required: [true, "Please provide your firstname"],
+    trim: true,
+  },
+  lastname: {
+    type: String,
+    required: [true, "Please provide your lastname"],
     trim: true,
   },
   email: {
@@ -27,6 +29,11 @@ const userSchema = mongoose.Schema({
     required: [true, "Please provide a password"],
     minLength: [8, "Your password should be a minimum of 8 characters"],
     select: false,
+  },
+  phoneNumber: {
+    type: String,
+    unique: [true, "Phone number already in use"],
+    required: [true, "Please provide your phone number"],
   },
   passwordChangedAt: {
     type: Date,
@@ -82,7 +89,7 @@ userSchema.pre("save", async function (next) {
 
 // Creating a pre save hook for creating slugs for each user based on their username
 userSchema.pre("save", function (next) {
-  this.slug = slugify(this.username, { lower: true });
+  this.slug = slugify(this.firstname + "-" + this.lastname, { lower: true });
   next();
 });
 

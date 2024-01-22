@@ -19,7 +19,9 @@ const signJWTToken = (id) => {
 // Signup function
 const signup = catchAsync(async (req, res, next) => {
   const newUser = await Users.create({
-    username: req.body.username,
+    firstname: req.body.firstname,
+    lastname: req.body.lastname,
+    phoneNumber: req.body.phoneNumber,
     email: req.body.email,
     password: req.body.password,
   });
@@ -49,14 +51,14 @@ const signup = catchAsync(async (req, res, next) => {
   // Hash the verification token and save to the user data in the database
   const hashedVerificationToken = encryptString(verification_token, 10);
 
-  const updatedUser = await Users.findByIdAndUpdate(newUser._id, {
+  const user = await Users.findByIdAndUpdate(newUser._id, {
     verificationToken: hashedVerificationToken,
   }).select("-password");
 
   const token = signJWTToken(newUser._id);
   res.status(200).json({
     status: "success",
-    data: { token, updatedUser },
+    data: { token, user },
   });
 });
 
