@@ -3,6 +3,12 @@ const { promisify } = require("util");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/AppError");
 const Users = require("./../models/user");
+const { createToken } = require("../utils/token");
+const sendEmail = require("../utils/email");
+const {
+  encryptString,
+  compareEncryptedString,
+} = require("../utils/encryption");
 
 const signJWTToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -12,7 +18,6 @@ const signJWTToken = (id) => {
 
 // Signup function
 const signup = catchAsync(async (req, res, next) => {
-  console.log(process.env.JWT_SECRET);
   const newUser = await Users.create({
     username: req.body.username,
     email: req.body.email,
@@ -29,11 +34,29 @@ const signup = catchAsync(async (req, res, next) => {
 
   // delete safeUserData.password;
 
+  // Create a verification URL and send to the user's email for verification
+  const verification_token = createToken("hex");
+  const verificationUrl = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/auth/verify/${newUser.email}/${verification_token}`;
+
+  sendEmail({
+    email: newUser.email,
+    subject: "Email Verification",
+    message: `Please click on the link below to verify your email address: \n\n ${verificationUrl}`,
+  });
+
+  // Hash the verification token and save to the user data in the database
+  const hashedVerificationToken = encryptString(verification_token, 10);
+
+  const updatedUser = await Users.findByIdAndUpdate(newUser._id, {
+    verificationToken: hashedVerificationToken,
+  }).select("-password");
+
   const token = signJWTToken(newUser._id);
   res.status(200).json({
     status: "success",
-    user: newUser,
-    token,
+    data: { token, updatedUser },
   });
 });
 
@@ -114,20 +137,107 @@ const protectRoute = catchAsync(async (req, res, next) => {
   next();
 });
 
-// Creating a controller to get the user  by slug
-
-const getUserBySlug = catchAsync(async (req, res, next) => {
-  const slug = req.params.slug;
-  const user = await Users.find({ slug }).select("+_id");
-
+const resendEmailVerificationToken = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  // Check if user with email exist
+  const user = await Users.findOne({ email: email }).select(
+    "+verificationToken"
+  );
   if (!user) {
-    return next(new AppError("User not found!!!", 404));
+    return next(
+      new AppError("User with the specified email address does not exist", 404)
+    );
   }
+
+  // Send the verification email to the user
+  const verification_token = createToken("hex");
+  const verificationUrl = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/auth/verify/${user.email}/${verification_token}`;
+
+  sendEmail({
+    email: user.email,
+    subject: "Email Verification Link Resent",
+    message: `Please click on the link below to verify your email address: \n\n ${verificationUrl}`,
+  });
+
+  const hashedVerificationToken = encryptString(verification_token, 10);
+
+  // stored a hashed version of the token in the database
+  const updatedUser = await Users.findByIdAndUpdate(user._id, {
+    verification_token: hashedVerificationToken,
+  });
 
   res.status(200).json({
     status: "success",
-    user,
+    message: "Verification link has resent to your email address",
   });
 });
 
-module.exports = { signup, login, protectRoute, getUserBySlug };
+const verifyUserEmail = catchAsync(async (req, res, next) => {
+  const { email, verification_token } = req.params;
+  // Check if user with email exist
+  const user = await Users.findOne({ email: email }).select(
+    "+verificationToken"
+  );
+  if (!user) {
+    return next(
+      new AppError("User with the specified email address does not exist", 404)
+    );
+  }
+
+  if (user.emailVerified) {
+    return next(new AppError("User has already been verified", 404));
+  }
+
+  // Checks if the verificationToken in the request params matches the encrypted on in the Db
+  console.log(user.verificationToken);
+  console.log(user);
+  if (
+    !(await compareEncryptedString(verification_token, user.verificationToken))
+  ) {
+    return next(new AppError("Invalid verification token", 404));
+  }
+
+  // Update the user's verification status
+  const verifiedUser = await Users.findByIdAndUpdate(
+    user._id,
+    {
+      emailVerified: true,
+      verificationToken: null,
+    },
+    {
+      new: true,
+    }
+  );
+
+  res.status(200).json({
+    status: "success",
+    message: "User's email verified successfully",
+    verifiedUser,
+  });
+});
+
+// // Creating a controller to get the user  by slug
+// const getUserBySlug = catchAsync(async (req, res, next) => {
+//   const slug = req.params.slug;
+//   const user = await Users.find({ slug }).select("+_id");
+
+//   if (!user) {
+//     return next(new AppError("User not found!!!", 404));
+//   }
+
+//   res.status(200).json({
+//     status: "success",
+//     user,
+//   });
+// });
+
+module.exports = {
+  signup,
+  login,
+  protectRoute,
+  // getUserBySlug,
+  resendEmailVerificationToken,
+  verifyUserEmail,
+};

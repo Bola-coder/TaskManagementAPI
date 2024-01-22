@@ -39,4 +39,8 @@ router
   .route("/category/:categoryId")
   .get(authController.protectRoute, taskController.getTasksByCategory);
 
+router
+  .route("/reminder/:taskId")
+  .patch(authController.protectRoute, taskController.createTaskReminder);
+
 module.exports = router;

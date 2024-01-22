@@ -617,6 +617,33 @@ const unAssignTaskToTeamMember = catchAsync(async (req, res, next) => {
   });
 });
 
+const createTaskReminder = catchAsync(async (req, res, next) => {
+  const userID = await req.user._id;
+  const taskID = await req.params.id;
+  const { reminderDate } = await req.body;
+
+  const task = await Tasks.findById(taskID);
+  if (!task) {
+    return next(new AppError("Task with the specified ID not found", 404));
+  }
+
+  if (!task.user.equals(userID)) {
+    return next(
+      new AppError("You are not authorized to perform this operation", 403)
+    );
+  }
+
+  task.reminders.push({ reminderDate });
+
+  await task.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Reminder created successfully",
+    task,
+  });
+});
+
 module.exports = {
   createNewTask,
   getAllTasks,
@@ -632,4 +659,5 @@ module.exports = {
   assignTaskToTeamMember,
   getAssignedTasks,
   unAssignTaskToTeamMember,
+  createTaskReminder,
 };

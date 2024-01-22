@@ -87,6 +87,13 @@ const tasksSchema = new mongoose.Schema({
       },
     },
   ],
+  reminders: [
+    {
+      reminderDate: {
+        type: Date,
+      },
+    },
+  ],
 });
 
 tasksSchema.index({ name: "text", description: "text" });

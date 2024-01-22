@@ -34,6 +34,14 @@ const userSchema = mongoose.Schema({
   slug: {
     type: String,
   },
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: {
+    type: String,
+    select: false,
+  },
   active: {
     type: Boolean,
     default: true,
