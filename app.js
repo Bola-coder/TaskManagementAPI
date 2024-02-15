@@ -10,6 +10,7 @@ const commentRouter = require("./routes/comment");
 const teamRouter = require("./routes/team");
 const paymentRouter = require("./routes/payment");
 const AppError = require("./utils/AppError");
+const { cloudinaryConfig } = require("./utils/cloudinary");
 
 const app = express();
 
@@ -19,6 +20,7 @@ if (process.env.NODE_ENV === "development") {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("*", cloudinaryConfig);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);

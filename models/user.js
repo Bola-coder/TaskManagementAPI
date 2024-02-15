@@ -53,6 +53,10 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  profileImage: {
+    type: String,
+    default: "",
+  },
   teams: [
     {
       team: {
