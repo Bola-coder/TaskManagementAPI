@@ -12,17 +12,20 @@ const PERMISSIONS = ["addMember", "createTask", "removeMember"];
 // Create New Project
 const createNewProject = catchAsync(async (req, res, next) => {
   const { name, description } = req.body;
-  const userID = req.user.id;
+  const user = req.user;
 
   if (!name || !description) {
     return next(new AppError("Please provide name and description", 404));
   }
 
-  const project = await Products.create({ name, description, user: userID });
+  const project = await Products.create({ name, description, user: user.id });
 
   if (!project) {
     return next(new AppError("Failed to create new project", 404));
   }
+
+  user.projects.push({ project: project.id });
+  await user.save();
 
   res.status(200).json({
     status: "success",
@@ -31,10 +34,15 @@ const createNewProject = catchAsync(async (req, res, next) => {
   });
 });
 
+// Gets all the project created by the current user and the ones he is a member of
 const getAllProjects = catchAsync(async (req, res, next) => {
-  const userID = req.user.id;
+  const userID = req.user._id;
 
-  const projects = await Projects.find({ user: userID });
+  const projects = await Projects.find({
+    $or: [{ user: userID }, { members: { $in: [userID] } }],
+  })
+    .populate("user", "firstname lastname email")
+    .populate("members");
 
   if (!projects) {
     return next(new AppError("Failed to get all projects", 404));
@@ -48,6 +56,7 @@ const getAllProjects = catchAsync(async (req, res, next) => {
   });
 });
 
+// Add a user as member to a project
 const addMemberToProject = catchAsync(async (req, res, next) => {
   const userID = req.user.id;
   const projectID = req.params.projectID;
@@ -71,14 +80,29 @@ const addMemberToProject = catchAsync(async (req, res, next) => {
   if (!member.emailVerified) {
     return next(
       new AppError(
-        "Member has not verified their email address. Only members who have verified their email address can be added as project members",
+        "User with the specified memberEmail has not verified their email address. Only members who have verified their email address can be added as project members",
+        404
+      )
+    );
+  }
+
+  if (
+    project.members.some((projectMembers) =>
+      projectMembers.user.equals(member.id)
+    )
+  ) {
+    return next(
+      new AppError(
+        "The user with the specified member email is already a member of this project!",
         404
       )
     );
   }
 
   project.members.push({ user: member.id });
+  member.projects.push({ project: projectID });
   await project.save();
+  await member.save();
 
   res.status(200).json({
     status: "success",

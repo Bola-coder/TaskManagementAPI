@@ -57,6 +57,15 @@ const userSchema = mongoose.Schema({
     type: String,
     default: "",
   },
+  projects: [
+    {
+      project: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Projects",
+      },
+    },
+  ],
+
   teams: [
     {
       team: {
@@ -65,6 +74,7 @@ const userSchema = mongoose.Schema({
       },
     },
   ],
+
   assignedTasks: [
     {
       task: {
