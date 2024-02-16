@@ -194,8 +194,6 @@ const verifyUserEmail = catchAsync(async (req, res, next) => {
   }
 
   // Checks if the verificationToken in the request params matches the encrypted on in the Db
-  console.log(user.verificationToken);
-  console.log(user);
   if (
     !(await compareEncryptedString(verification_token, user.verificationToken))
   ) {

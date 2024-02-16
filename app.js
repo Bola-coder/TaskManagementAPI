@@ -4,6 +4,7 @@ const cors = require("cors");
 const errorHandler = require("./middlewares/ErrorHandler");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
+const projectRouter = require("./routes/project");
 const taskRouter = require("./routes/task");
 const categoryRouter = require("./routes/category");
 const commentRouter = require("./routes/comment");
@@ -24,6 +25,7 @@ app.use("*", cloudinaryConfig);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/project", projectRouter);
 app.use("/api/v1/task", taskRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/comment", commentRouter);
@@ -32,7 +34,7 @@ app.use("/api/v1/payment", paymentRouter);
 
 app.all("*", (req, res, next) => {
   const error = new AppError(
-    `Can't find ${req.originalUrl} on this server. Route not defined`,
+    `Can't find ${req.method} ${req.originalUrl} on this server. Route not defined`,
     404
   );
   next(error);
